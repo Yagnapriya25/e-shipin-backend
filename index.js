@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { dbConnection } = require('./db');
+const { userRouter } = require('./Router/userRouter.js');
 
 dotenv.config();
 
@@ -21,8 +22,6 @@ app.use(bodyParser.json());
 
 dbConnection();
 
-app.get("/",async(req,res)=>{
-    console.log('its working')
-})
+app.use("/api/user",userRouter);
 
 app.listen(PORT,()=>console.log(`localhost running under:${PORT}`))
