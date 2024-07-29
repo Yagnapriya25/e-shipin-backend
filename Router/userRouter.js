@@ -3,8 +3,9 @@ const dotenv = require('dotenv');
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcrypt');
 const jwt = require("jsonwebtoken");
+const path = require("path");
 const { User, generateToken } = require('../Models/userModel');
-const { text } = require('body-parser');
+const multer = require('multer');
 
 dotenv.config();
 
@@ -20,6 +21,16 @@ const transporter = nodemailer.createTransport({
 });
 
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const uploads = multer({
+    storage:multer.diskStorage({
+        destination:function(req,file,cb){
+            cb(null,path.join(__dirname,"..","uploads/users"))
+        },
+        filename:function(req,file,cb){
+            cb(null,file.originalname)
+        }
+    })
+})
 
 // Routes
 router.post('/register', async (req, res) => {
@@ -205,6 +216,44 @@ router.get("/getuser/:id",async(req,res)=>{
             res.status(400).json({message:"Data found error"})
         }
         res.status(200).json({message:"Data found successfully",user})
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({message:'Internal Server Error'});
+    }
+})
+
+router.delete("/remove/:id",async(req,res)=>{
+    try {
+        const user = await User.findOneAndDelete({_id:req.params.id});
+        if(!user){
+            res.status(400).json({message:"Data remove error"})
+        }
+        res.status(200).json({message:"successfully data removed"})
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({message:'Internal Server Error'});
+    }
+})
+router.put("/edit/:id",uploads.single("avatar"),async(req,res)=>{
+    try {
+        let avatar;
+        let Base_URL = process.env.Backend_url;
+        if(process.env.NODE_ENV==="production"){
+            Base_URL=`${req.protocol}://${req.get("host")}`
+        }
+         if(req.file){
+            avatar = `${Base_URL}/uploads/users/${req.file.originalname}`
+         }
+         const user = await User.findByIdAndUpdate(
+            req.params.id,
+            {...req.body,avatar},
+            {new:true}
+         )
+         if(!user){
+            res.status(400).json({message:"Error Occured in Data Updation"})
+         }
+         res.status(200).json({message:"Data Updated Successfully",user})
+
     } catch (error) {
         console.error(error);
         res.status(500).json({message:'Internal Server Error'});

@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { dbConnection } = require('./db');
+const path = require("path");
 const { userRouter } = require('./Router/userRouter.js');
 
 dotenv.config();
@@ -21,6 +22,8 @@ app.use(cors({}));
 app.use(bodyParser.json());
 
 dbConnection();
+
+app.use("/uploads",express.static(path.join(__dirname,"/uploads")))
 
 app.use("/api/user",userRouter);
 
