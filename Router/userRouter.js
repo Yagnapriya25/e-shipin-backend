@@ -17,10 +17,12 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.EMAIL,
         pass: process.env.EMAIL_PASSWORD
-    }
+    },
+    tls: {
+        rejectUnauthorized: false,
+    },
 });
 
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 const uploads = multer({
     storage:multer.diskStorage({
         destination:function(req,file,cb){
@@ -33,78 +35,97 @@ const uploads = multer({
 })
 
 // Routes
+const tempOtpStore = {};
+
+
 router.post('/register', async (req, res) => {
-    const { username, email, password, otp } = req.body;
+    const { username, email, password } = req.body;
 
     try {
+        // Check if user already exists
         let user = await User.findOne({ email });
-
-        if(!username || !email || !password || !otp){
-            res.status(400).json({message:"All credentials are Required"})
+        if (user) {
+            return res.status(400).json({ msg: 'User already exists' });
         }
-        if (!otp) {
-            // Step 1: Send OTP
-            if (user && !user.otp) {
-                return res.status(400).json({ msg: 'User already exists' });
-            }
 
-            const generatedOtp = generateOTP();
-            const otpExpires = Date.now() + 300000; // 5mins
+        // Validate input
+        if (!username || !email || !password) {
+            return res.status(400).json({ msg: 'Please provide username, email, and password' });
+        }
 
-            if (user) {
-                // User exists but registration was not completed
-                user.username = username;
-                user.password = await bcrypt.hash(password, 10);
-                user.otp = generatedOtp;
-                user.otpExpires = otpExpires;
+        // Generate OTP
+        const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit OTP
+        const otpExpires = Date.now() + 300000; // 5 minutes
+
+        // Send OTP email
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: email,
+            subject: 'OTP for account verification',
+            text: `Your OTP is ${generatedOtp}`
+        };
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error(error);
+                return res.status(500).json({ msg: 'Error sending email' });
             } else {
-                // New user
-                user = new User({
+                // Store OTP and expiration time in memory or a temporary store
+                // This example uses a simple in-memory store, but you should use a more scalable solution in production
+                
+                
+
+                tempOtpStore[email] = {
+                    otp: generatedOtp,
+                    otpExpires,
                     username,
                     email,
-                    password: await bcrypt.hash(password, 10),
-                    otp: generatedOtp,
-                    otpExpires
-                });
+                    password: hashedPassword,
+                };
+                return res.status(200).json({ msg: 'OTP sent to email' });
             }
-
-            await user.save();
-
-            const mailOptions = {
-                from: process.env.EMAIL,
-                to: email,
-                subject: 'OTP for account verification',
-                text: `Your OTP is ${generatedOtp}`
-            };
-
-            transporter.sendMail(mailOptions, (error, info) => {
-                if (error) {
-                    return res.status(500).json({ msg: 'Error sending email' });
-                } else {
-                    res.status(200).json({ msg: 'OTP sent to email' });
-                }
-            });
-        } else {
-            // Step 2: Verify OTP
-            if (!user) {
-                return res.status(400).json({ msg: 'User not found' });
-            }
-
-            if (user.otp !== otp || user.otpExpires < Date.now()) {
-                return res.status(400).json({ msg: 'Invalid or expired OTP' });
-            }
-
-            user.otp = undefined;
-            user.otpExpires = undefined;
-            await user.save();
-
-            res.status(200).json({ msg: 'User registered successfully' });
-        }
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal Server Error');
     }
 });
+
+
+router.post('/verify-otp', async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        // Check if OTP exists and is valid
+        const tempUser = tempOtpStore[email];
+        if (!tempUser || tempUser.otp !== otp || tempUser.otpExpires < Date.now()) {
+            return res.status(400).json({ msg: 'Invalid or expired OTP' });
+        }
+
+        // Create new user
+        const user = new User({
+            username: tempUser.username,
+            email: tempUser.email,
+            password: tempUser.password,
+        });
+
+        await user.save();
+
+        // Generate token
+        const token = jwt.sign({ id: user._id }, process.env.Secret_key, { expiresIn: '1h' });
+
+        // Clear OTP from temporary store
+        delete tempOtpStore[email];
+
+        res.status(200).json({ msg: 'User registered successfully', token, user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 
 router.post("/login",async(req,res)=>{
     try {

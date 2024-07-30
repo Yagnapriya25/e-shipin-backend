@@ -5,10 +5,13 @@ const bodyParser = require('body-parser');
 const { dbConnection } = require('./db');
 const path = require("path");
 const { userRouter } = require('./Router/userRouter.js');
+const { categoryRouter } = require('./Router/categoryRouter.js');
+
+
+// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 dotenv.config();
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const app = express();
 
@@ -23,8 +26,10 @@ app.use(bodyParser.json());
 
 dbConnection();
 
-app.use("/uploads",express.static(path.join(__dirname,"/uploads")))
+app.use("/uploads",express.static(path.join(__dirname,"uploads")))
 
 app.use("/api/user",userRouter);
+
+app.use("/api/category",categoryRouter)
 
 app.listen(PORT,()=>console.log(`localhost running under:${PORT}`))
