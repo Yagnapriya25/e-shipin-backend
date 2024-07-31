@@ -6,6 +6,7 @@ const { dbConnection } = require('./db');
 const path = require("path");
 const { userRouter } = require('./Router/userRouter.js');
 const { categoryRouter } = require('./Router/categoryRouter.js');
+const { productRouter } = require('./Router/productRouter.js');
 
 
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -31,5 +32,7 @@ app.use("/uploads",express.static(path.join(__dirname,"uploads")))
 app.use("/api/user",userRouter);
 
 app.use("/api/category",categoryRouter)
+
+app.use("/api/product",productRouter);
 
 app.listen(PORT,()=>console.log(`localhost running under:${PORT}`))

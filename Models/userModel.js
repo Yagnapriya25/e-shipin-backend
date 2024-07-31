@@ -8,7 +8,9 @@ const userSchema = new mongoose.Schema({
     avatar:{type:String},
     otp: { type: String },
     otpExpires: { type: Date }
-});
+},
+{timestamps:true}
+);
 
 const generateToken = (id)=>{
     return jwt.sign({id},process.env.secret_key)

@@ -75,6 +75,20 @@ router.get("/getsingle/:id",async(req,res)=>{
       res.status(500).send('Internal Server Error');
   }
 })
+
+router.delete("/remove/:id",async(req,res)=>{
+  try {
+    const category = await Category.findOneAndDelete({_id:req.params.id})
+    if(!category){
+      res.status(400).json({message:"Error occured in data deletion"})
+    }
+    res.status(200).json({message:"Data deleted successfully"})
+    
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:"Internal server error"})
+  }
+})
 const categoryRouter = router;
 
 module.exports = {categoryRouter}
