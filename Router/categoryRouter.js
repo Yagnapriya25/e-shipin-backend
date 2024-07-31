@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const dotenv = require('dotenv');
-const { Category } = require('../Models/categoryModel');
+const {Category} = require('../Models/categoryModel')
 dotenv.config();
 
 const upload = multer({
@@ -19,114 +19,62 @@ const upload = multer({
 const router = express.Router();
 
 // Create a new category
-router.post('/create', upload.single('picture'), async (req, res) => {
+router.post('/create', upload.single("photo"),async (req, res) => {
+  const { name } = req.body;
+
   try {
-    const { name } = req.body;
+      // Check if category already exists
+      let category = await Category.findOne({ name });
+      if (category) {
+          return res.status(400).json({ msg: 'Category already exists' });
+      }
+     let photo;
+     const Base_URL = process.env.Backend_url;
+     if(process.env.NODE_ENV==='production'){
+      Base_URL=`${req.protocol}://${req.get("host")}`
+     } 
+     if(req.file){
+      photo=`${Base_URL}/uploads/category/${req.file.originalname}`
+     }
+      // Create new category
+      category = new Category({
+          name,
+          photo
+      });
 
-    if (!name) {
-      return res.status(400).json({ message: 'Category name is required' });
-    }
+      await category.save();
 
-    const existingCategory = await Category.findOne({ name });
-    if (existingCategory) {
-      return res.status(400).json({ message: 'Category with this name already exists' });
-    }
-
-    let picture;
-    let Base_URL = process.env.Backend_url;
-    if (process.env.NODE_ENV === 'production') {
-      Base_URL = `${req.protocol}://${req.get('host')}`;
-    }
-    if (req.file) {
-      picture = `${Base_URL}/uploads/category/${req.file.originalname}`;
-    }
-
-    const category = new Category({ name, picture });
-
-    await category.save();
-
-    res.status(200).json({ message: 'Category added successfully', category });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+      res.status(201).json({ msg: 'Category created successfully', category });
+  } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
   }
 });
 
-// Get all categories
-router.get('/', async (req, res) => {
+router.get('/getall',async(req,res)=>{
   try {
-    const categories = await Category.find();
-    res.status(200).json(categories);
+    const category = await Category.find({});
+    if(!category){
+      res.status(400).json({message:"data not found"})
+    }
+    res.status(200).json({message:"data found successfully",length:category.length,category})
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error(error);
+      res.status(500).send('Internal Server Error');
   }
-});
-
-// Get a single category by ID
-router.get('/:id', async (req, res) => {
+})
+router.get("/getsingle/:id",async(req,res)=>{
   try {
-    const category = await Category.findById(req.params.id);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+    const category = await Category.findById({_id:req.params.id});
+    if(!category){
+      res.status(400).json({message:"data not found"})
     }
-    res.status(200).json(category);
+    res.status(200).json({message:"data found successfully",category})
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
+    console.error(error);
+      res.status(500).send('Internal Server Error');
   }
-});
-
-// Update a category by ID
-router.put('/:id', upload.single('picture'), async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    if (!name) {
-      return res.status(400).json({ message: 'Category name is required' });
-    }
-
-    const existingCategory = await Category.findOne({ name, _id: { $ne: req.params.id } });
-    if (existingCategory) {
-      return res.status(400).json({ message: 'Category with this name already exists' });
-    }
-
-    let picture;
-    let Base_URL = process.env.Backend_url;
-    if (process.env.NODE_ENV === 'production') {
-      Base_URL = `${req.protocol}://${req.get('host')}`;
-    }
-    if (req.file) {
-      picture = `${Base_URL}/uploads/category/${req.file.originalname}`;
-    }
-
-    const category = await Category.findByIdAndUpdate(req.params.id, { name, picture }, { new: true });
-
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-
-    res.status(200).json({ message: 'Category updated successfully', category });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
-
-// Delete a category by ID
-router.delete('/:id', async (req, res) => {
-  try {
-    const category = await Category.findByIdAndDelete(req.params.id);
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
-    }
-    res.status(200).json({ message: 'Category deleted successfully' });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: 'Internal Server Error' });
-  }
-});
-
+})
 const categoryRouter = router;
 
 module.exports = {categoryRouter}
