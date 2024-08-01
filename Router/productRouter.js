@@ -66,19 +66,80 @@ router.post("/create/:cat_id/:id",uploads.array("images"),async(req,res)=>{
 })
 router.get("/getall",async(req,res)=>{
     try {
-        const product = await Product.find({}).populate("user category");
+        const product = await Product.find({}).populate("user category","-password");
         if(!product ){
             res.status(400).json({message:"Data not found"})
         }
-        res.status(200).json({message:"Data not found successfully",product})
+        res.status(200).json({message:"Data found successfully",product})
     } catch (error) {
         console.log(error);
         res.status(500).json({message:"Internal server error"});
     }
 })
 
+router.get("/getsingle/:id",async(req,res)=>{
+    try {
+        const product = await Product.findOne({_id:req.params.id}).populate("user category","-password");
+        if(!product){
+            res.status(400).json({message:"Product not found"})
+        }
+        res.status(200).json({message:"Product found successfully",product});
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message:"Internal server error"});
+    }
+})
+router.delete("/remove/:id",async(req,res)=>{
+    try {
+        const product = await Product.findByIdAndDelete({_id:req.params.id});
+        if(!product){
+            res.status(400).json({message:"Error occured in product deletion"})
+        }
+        res.status(200).json({message:"Data removed succesfully",product})
+        
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message:"Internal server error"});
+    }
+})
+router.put("/edit/:id",uploads.array("images"),async(req,res)=>{
+    try {
+        const product = await Product.findOne({_id:req.params.id});
+        if(!product){
+            res.status(400).json({message:"Product not found"})
+        }
+        let images = [];
+        const Base_URL = process.env.Backend_url;
+        if(process.env.NODE_ENV==='production'){
+            Base_URL=`${req.protocol}://${req.get("host")}`
+        }
+        if(req.files){
+            req.files.forEach(file=>{
+                let url = `${Base_URL}/uploads/products/${file.originalname}`
+                images.push({image:url});
+            })
+        }
+        product.images = images || product.images;
+        product.name=req.body.name || product.name;
+        product.description1=req.body.description1 || product.description1;
+        product.description2=req.body.description2 || product.description2;
+        product.description3=req.body.description3 || product.description3;
+        product.Instock = req.body.Instock || product.Instock;
+        product.price = req.body.price || product.price;
+        product.category = product.category;
+        product.user = product.user;
 
+        await product.save();
+        if(!product){
+            res.status(400).json({message:"Error occured in updation"})
+        }
+        res.status(200).json({message:"Product Updated Successfully",product})
 
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message:"Internal server error"}); 
+    }
+})
 const productRouter = router;
 
 module.exports = {productRouter}
