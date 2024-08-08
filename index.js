@@ -7,6 +7,7 @@ const path = require("path");
 const { userRouter } = require('./Router/userRouter.js');
 const { categoryRouter } = require('./Router/categoryRouter.js');
 const { productRouter } = require('./Router/productRouter.js');
+const { cartRouter } = require('./Router/cartRouter.js');
 
 
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -34,5 +35,7 @@ app.use("/api/user",userRouter);
 app.use("/api/category",categoryRouter)
 
 app.use("/api/product",productRouter);
+
+app.use("/api/cart",cartRouter);
 
 app.listen(PORT,()=>console.log(`localhost running under:${PORT}`))
