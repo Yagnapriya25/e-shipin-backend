@@ -232,7 +232,7 @@ router.get("/allusers",async(req,res)=>{
 
 router.get("/getuser/:id",async(req,res)=>{
     try {
-        const user = await User.findOne({_id:req.params.id})
+        const user = await User.findOne({_id:req.params.id}).populate('address');
         if(!user){
             res.status(400).json({message:"Data found error"})
         }
