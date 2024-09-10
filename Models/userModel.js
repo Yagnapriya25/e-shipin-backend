@@ -8,6 +8,7 @@ const userSchema = new mongoose.Schema({
     avatar: { type: String },
     otp: { type: String },
     otpExpires: { type: Date },
+    phoneNumber:{type:Number,min:10},
     address: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Address' }]
 }, { timestamps: true });
 

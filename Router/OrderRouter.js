@@ -81,6 +81,7 @@ const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const { Product } = require('../Models/productModel');
 const Order = require('../Models/orderModel');  // Import the Order model
+const { User } = require('../Models/userModel');
 
 const router = express.Router();
 
@@ -90,18 +91,22 @@ const razorpay = new Razorpay({
 });
 
 // Route to create an order
-router.post('/payment/:p_id', async (req, res) => {
+router.post('/payment/:id/:p_id/', async (req, res) => {
+  const userId = req.params.id;
   const  productId  = req.params.p_id;
 
   if (productId) {
     try {
       // Fetch the product details from the database using productId
       const product = await Product.findById(productId);
+      const user = await User.findById(userId);
 
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
-
+      if(!user){
+        return res.status(400).json({message:"User not found"});
+      }
       // Create order options
       const options = {
         amount: product.price * 100, // Amount in paise
@@ -109,9 +114,11 @@ router.post('/payment/:p_id', async (req, res) => {
         receipt: `receipt_order_${productId}`, // Unique receipt based on product ID
         payment_capture: '1', // Automatically capture payment
         notes: {
-        product_name: product.name,
-       customer_name: req.body.customer_name,  // Get customer name from the request body
-       customer_email: req.body.customer_email // Get customer email from the request body
+        product_details: product,
+       customer_name: user.username,  // Get customer name from the request body
+       customer_email: user.email, // Get customer email from the request body
+       custemer_address:user.address,
+       customer_mobile:user.phoneNumber
   }
       };
 
