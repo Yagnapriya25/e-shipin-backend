@@ -9,6 +9,7 @@ const { categoryRouter } = require('./Router/categoryRouter.js');
 const { productRouter } = require('./Router/productRouter.js');
 const { cartRouter } = require('./Router/cartRouter.js');
 const { addressRouter } = require('./Router/addressRouter.js');
+const { orderRouter } = require('./Router/OrderRouter.js');
 
 
 // process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -40,5 +41,7 @@ app.use("/api/product",productRouter);
 app.use("/api/cart",cartRouter);
 
 app.use("/api/address",addressRouter)
+
+app.use("/api/order",orderRouter);
 
 app.listen(PORT,()=>console.log(`localhost running under:${PORT}`))
