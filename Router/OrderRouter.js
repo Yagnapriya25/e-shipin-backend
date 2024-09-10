@@ -72,4 +72,6 @@ router.post('/payment/:p_id', async (req, res) => {
   return res.status(400).json({ error: 'Invalid request data' });
 });
 
-module.exports = router;
+const orderRouter = router;
+
+module.exports = {orderRouter};
