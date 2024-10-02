@@ -2,7 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const dotenv = require('dotenv');
-const {Category} = require('../Models/categoryModel')
+const {Category} = require('../Models/categoryModel');
+const { Product } = require('../Models/productModel');
 dotenv.config();
 
 const upload = multer({
@@ -75,6 +76,21 @@ router.get("/getsingle/:id",async(req,res)=>{
       res.status(500).send('Internal Server Error');
   }
 })
+
+router.get("/:cat_id", async (req, res) => {
+  try {
+      const products = await Product.find({ category: req.params.cat_id }).populate("user", "-password");
+      
+      if (!products || products.length === 0) {
+          return res.status(404).json({ message: "No products found for this category" });
+      }
+      
+      res.status(200).json({ message: "Products found successfully", products });
+  } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 router.delete("/remove/:id",async(req,res)=>{
   try {
