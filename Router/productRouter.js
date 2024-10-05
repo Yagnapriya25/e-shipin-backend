@@ -21,17 +21,19 @@ const uploads = multer({
 router.post("/create/:cat_id/:id",uploads.array("images"),async(req,res)=>{
     try {
         let images = [];
-        const {name,description1,description2,description3,Instock,price}=req.body;
+        const {name,description1,description2,description3,instock,price}=req.body;
         const Base_URL = process.env.Backend_url;
         if(process.env.NODE_ENV==='production'){
             Base_URL = `${req.protocol}://${req.get("host")}`
         }
-        if(req.files.length>0){
-            req.files.forEach(file=>{
-                let url = `${Base_URL}/uploads/products/${file.originalname}`
-                images.push({image:url})
-            })
-
+        
+        if (req.files && req.files.length > 0) {
+            req.files.forEach(file => {
+                let url = `${Base_URL}/uploads/products/${file.originalname}`;
+                images.push({ image: url });
+            });
+        } else {
+            console.log("No files uploaded.");
         }
         const productData = {
             name,
@@ -40,7 +42,7 @@ router.post("/create/:cat_id/:id",uploads.array("images"),async(req,res)=>{
             description3,
             images,
             price,
-            Instock,
+            instock,
             user: req.params.id,
             category:req.params.cat_id
           };
@@ -140,6 +142,20 @@ router.put("/edit/:id",uploads.array("images"),async(req,res)=>{
         res.status(500).json({message:"Internal server error"}); 
     }
 })
+router.get("/getproduct/:id",async(req,res)=>{
+    try {
+        const user = await User.findOne({_id:req.params.id});
+        const product = await Product.find({user}).populate("user category","-password");
+        if(!product){
+            res.status(400).json({message:"Product Not Found"});
+        }
+        res.status(200).json({message:"Product Found Successfully",product})
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({message:"Internal Server Error"})
+    }
+})
+
 const productRouter = router;
 
 module.exports = {productRouter}
