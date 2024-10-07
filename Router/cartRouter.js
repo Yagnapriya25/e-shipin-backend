@@ -118,42 +118,19 @@ router.delete("/removeAll/:userId", async (req, res) => {
     }
 });
 
-
-async function calculateTotalPrice(cart) {
-    const productIds = cart.items.map(item => {
-        return item.product._id ? item.product._id.toString() : item.product.toString();
-    });
-
-    const products = await Product.find({ _id: { $in: productIds } });
-
-    const productMap = products.reduce((map, product) => {
-        map[product._id.toString()] = product.price;
-        return map;
-    }, {});
-
-    let totalPrice = 0;
-    for (const item of cart.items) {
-        const productId = item.product._id ? item.product._id.toString() : item.product.toString();
-        const productPrice = productMap[productId];
-
-        if (productPrice !== undefined) {
-            totalPrice += productPrice * item.quantity;
-        } else {
-            console.warn(`Product ID ${productId} not found in products`);
-        }
-    }
-
-    return totalPrice;
-}
-
-
-
 router.get("/get/:userId", async (req, res) => {
     const { userId } = req.params;
 
     try {
-        const cart = await Cart.findOne({ user: userId }).populate("items.product", "name price");
-        if (!cart) return res.status(400).json({ status: 'error', message: "Cart not found" });
+        const cart = await Cart.findOne({ user: userId })
+        .populate("user", "-password") // Populate user without password
+        .populate({
+            path: 'items.product', // Populate the product
+            populate: {
+                path: 'category', // Populate the category
+                select: 'name' // Specify which fields to select, e.g., just the category name
+            }
+        });        if (!cart) return res.status(400).json({ status: 'error', message: "Cart not found" });
 
         const totalPrice = await calculateTotalPrice(cart);
         return res.status(200).json({ status: 'success', message: "Cart retrieved successfully", cart, totalPrice });
@@ -164,35 +141,58 @@ router.get("/get/:userId", async (req, res) => {
     }
 });
 
-
 async function calculateTotalPrice(cart) {
-
     const productIds = cart.items.map(item => {
         return item.product._id ? item.product._id.toString() : item.product.toString();
     });
 
+    // Fetch products by their IDs
     const products = await Product.find({ _id: { $in: productIds } });
 
+    // Create a map to easily access product data by ID
     const productMap = products.reduce((map, product) => {
-        map[product._id.toString()] = product.price; // Ensure toString() is used for consistency
+        map[product._id.toString()] = {
+            price: product.price,
+            name: product.name // Store the product name as well
+        };
         return map;
     }, {});
 
-
     let totalPrice = 0;
+    const productDetails = []; // Array to hold details of each product price
+
     for (const item of cart.items) {
         const productId = item.product._id ? item.product._id.toString() : item.product.toString(); // Handle both cases
-        const productPrice = productMap[productId]; // Get price from the map
+        const productData = productMap[productId]; // Get product data from the map
 
-        if (productPrice !== undefined) { // Check if the product exists in the map
-            totalPrice += productPrice * item.quantity; // Calculate total price
+        if (productData) { // Check if the product exists in the map
+            const itemTotalPrice = productData.price * item.quantity; // Calculate total price for the item
+            totalPrice += itemTotalPrice; // Add to the total cart price
+
+            // Push the product details into the array
+            productDetails.push({
+                productId: productId,
+                productName: productData.name, // Include product name
+                productPrice: productData.price,
+                quantity: item.quantity,
+                totalItemPrice: itemTotalPrice // Total price for this item
+            });
         } else {
             console.warn(`Product ID ${productId} not found in products`);
         }
     }
 
-    return totalPrice;
+    return {
+        totalPrice,
+        productDetails // Return both total price and product details
+    };
 }
+
+
+
+
+
+
 
 
 
