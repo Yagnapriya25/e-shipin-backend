@@ -91,33 +91,26 @@ router.delete("/removeAll/:userId", async (req, res) => {
     try {
         const { userId } = req.params;
 
-        // Fetch the cart before deletion
         const cart = await Cart.findOne( {user:userId} );
         console.log(cart);
-        // Check if the cart exists and has items
         if (!cart || cart.items.length === 0) {
             return res.status(404).json({ message: "Cart not found or empty." });
         }
 
-        // Calculate the total price before deleting
         const totalPrice = await calculateTotalPrice(cart);
 
         // Delete the cart items
         const deleteResult = await Cart.deleteMany({ user: userId });
 
-        // Log the delete result to confirm it
-        console.log("Delete Result:", deleteResult);
-
-        // Check if items were deleted
+        
         if (deleteResult.deletedCount === 0) {
             return res.status(500).json({ message: "No items were deleted." });
         }
 
-        // Return the total price and an indication that the cart is empty
         res.status(200).json({
             message: "All cart items removed successfully.",
             totalPrice:0,
-            cart: [], // Return an empty array since the cart is deleted
+            cart: [], 
         });
     } catch (error) {
         console.error("Error during deletion:", error);
