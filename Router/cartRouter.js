@@ -31,6 +31,31 @@ router.put("/add/:userId/:productId", async (req, res) => {
     }
 });
 
+router.put("/increase/:userId/:productId", async (req, res) => {
+    const { userId, productId } = req.params;
+
+    try {
+        let cart = await Cart.findOne({ user: userId });
+        if (!cart) return res.status(400).json({ status: 'error', message: "Cart not found" });
+
+        const itemIndex = cart.items.findIndex(item => item.product == productId);
+
+        if (itemIndex > -1) {
+            // Increase the quantity
+            cart.items[itemIndex].quantity += 1;
+            await cart.save();
+            const totalPrice = await calculateTotalPrice(cart);
+            return res.status(200).json({ status: 'success', message: "Product quantity updated successfully", cart, totalPrice });
+        } else {
+            return res.status(400).json({ status: 'error', message: "Product not found in cart" });
+        }
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ status: 'error', message: "Internal server error" });
+    }
+});
+
 // Decrease product quantity or remove if quantity is 0
 router.put("/decrease/:userId/:productId", async (req, res) => {
     const { userId, productId } = req.params;
