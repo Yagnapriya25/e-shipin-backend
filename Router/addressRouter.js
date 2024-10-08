@@ -20,6 +20,7 @@ router.post('/create/:id', async (req, res) => {
             state,
             country,
             postalCode,
+            phoneNumber,
             user: mongoose.Types.ObjectId(userId)
         });
 

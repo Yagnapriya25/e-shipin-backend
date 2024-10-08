@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     otp: { type: String },
     otpExpires: { type: Date },
     phoneNumber:{type:Number,min:10},
-    address: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Address' }]
+    address: {type: mongoose.Schema.Types.ObjectId, ref: 'Address' }
 }, { timestamps: true });
 
 const generateToken = (id)=>{
