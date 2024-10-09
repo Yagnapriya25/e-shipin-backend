@@ -229,19 +229,19 @@ router.get("/allusers",async(req,res)=>{
         res.status(500).json({message:'Internal Server Error'});
     }
 })
-
-router.get("/getuser/:id",async(req,res)=>{
+router.get("/getuser/:id", async (req, res) => {
     try {
-        const user = await User.findOne({_id:req.params.id}).populate('address');
-        if(!user){
-            res.status(400).json({message:"Data found error"})
+        const user = await User.findById(req.params.id).populate('address'); // Ensure 'address' matches your User model
+        if (!user) {
+            return res.status(400).json({ message: "User not found" });
         }
-        res.status(200).json({message:"Data found successfully",user})
+        res.status(200).json({ message: "Data found successfully", user });
     } catch (error) {
         console.error(error);
-        res.status(500).json({message:'Internal Server Error'});
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-})
+});
+
 
 router.delete("/remove/:id",async(req,res)=>{
     try {
