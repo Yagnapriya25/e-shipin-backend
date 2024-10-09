@@ -65,7 +65,7 @@ router.post('/create/:userId', async (req, res) => {
 
 
 
-router.get("/getf/:userId", async (req, res) => {
+router.get("/get/:userId", async (req, res) => {
     const userId = req.params.userId;
     try {
         // Find the address associated with the user
