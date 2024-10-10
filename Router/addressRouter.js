@@ -1,79 +1,18 @@
 const express = require("express");
 const { Address } = require("../Models/addressModel");
 const { User } = require("../Models/userModel");
+const multer = require('multer');
+const upload = multer();
 
 
 const router = express.Router();
 
 
-// router.post('/create/:id', async (req, res) => {
-//     const userId = req.params.id;
-
-//     try {
-//         const { name,district, city, state, country, pincode } = req.body;
-
-//         // Create a new address
-//         const newAddress = await Address.create({
-//             name,
-//             district,
-//             city,
-//             state,
-//             country,
-//             pincode,
-//             phoneNumber,
-//             user: userId
-//         });
-
-//         // Add the new address to the user's addresses array
-//         await User.findByIdAndUpdate(userId, { $push: { addresses: newAddress._id } });
-
-//         res.status(201).json(newAddress);
-//     } catch (error) {
-//         console.error('Error creating address:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// });
-
-// router.post('/create/:userId', async (req, res) => {
-//     const userId = req.params.userId;
-
-//     try {
-//         const { name, district, city, state, country, pincode, phoneNumber } = req.body;
-
-//         const newAddress = new Address({
-//             name,
-//             district,
-//             city,
-//             state,
-//             country,
-//             pincode,
-//             phoneNumber,
-//             user: userId // Associate the address with the user
-//         });
-
-//         await newAddress.save();
-
-//         // Update the user's address reference
-//         await User.findByIdAndUpdate(userId, { address: newAddress._id });
-
-//         res.status(201).json(newAddress);
-//     } catch (error) {
-//         console.error('Error creating address:', error);
-//         res.status(500).json({ message: 'Internal server error' });
-//     }
-// });
-
-router.post('/create/:userId', async (req, res) => {
+router.post('/create/:userId', upload.none(),async (req, res) => {
     const { name, district, city, state, country, landmark, pincode, phoneNumber } = req.body;
     const userId = req.params.userId;
 
-    // Validate required fields
-    if (!name || !district || !city || !state || !country || !landmark || !pincode || !phoneNumber || !userId) {
-        return res.status(400).json({ message: "All fields are required" });
-    }
-
-    try {
-        // Create a new address document
+       try {
         const address = new Address({
             name,
             district,
@@ -83,10 +22,9 @@ router.post('/create/:userId', async (req, res) => {
             landmark,
             pincode,
             phoneNumber,
-            user: userId, // Link to the user
+            user: userId, 
         });
 
-        // Save the address to the database
         await address.save();
         res.status(201).json({ message: "Address created successfully", address });
     } catch (error) {
@@ -119,7 +57,7 @@ router.get("/get/:userId", async (req, res) => {
 });
 
 
-router.put("/edit/:userId", async (req, res) => {
+router.put("/edit/:userId",upload.none(), async (req, res) => {
     const userId = req.params.userId;
 
     try {
