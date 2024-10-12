@@ -4,6 +4,10 @@ const { Product } = require('../Models/productModel');
 const { User } = require('../Models/userModel');
 const Order = require('../Models/orderModel'); // Import the Order model
 const crypto = require('crypto');
+const dotenv = require('dotenv');
+const { Address } = require('../Models/addressModel');
+
+dotenv.config()
 
 const router = express.Router();
 
@@ -11,7 +15,6 @@ const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
-
 // Route to create an order
 router.post('/payment/:id/:p_id', async (req, res) => {
     const userId = req.params.id;
@@ -19,15 +22,15 @@ router.post('/payment/:id/:p_id', async (req, res) => {
 
     try {
         const product = await Product.findById(productId);
+        const address = await Address.findOne({user:userId});
         const user = await User.findById(userId);
-
+        
         if (!product) {
             return res.status(404).json({ error: 'Product not found' });
         }
         if (!user) {
             return res.status(400).json({ error: 'User not found' });
         }
-
         const options = {
             amount: product.price * 100, // Amount in paise
             currency: 'INR', // Required currency
@@ -37,8 +40,9 @@ router.post('/payment/:id/:p_id', async (req, res) => {
                 product_details: product,
                 customer_name: user.username,
                 customer_email: user.email,
-                customer_address: user.address,
+                customer_address: address,
                 customer_mobile: user.phoneNumber,
+                
             },
         };
 
