@@ -155,7 +155,24 @@ router.get("/getproduct/:id",async(req,res)=>{
         res.status(500).json({message:"Internal Server Error"})
     }
 })
-
+router.get("/search/:keyword",async(req,res)=>{
+    try {
+        const keyword = req.params.keyword;
+        const product = await Product.find({$or:[
+            {name:{$regex:keyword,$options:"i"}},
+            {description1:{$regex:keyword,$options:"i"}},
+            {description2:{$regex:keyword,$options:"i"}},
+            {description3:{$regex:keyword,$options:"i"}},
+        ]}).populate("category user")
+        if(!product){
+            res.status(400).json({message:"Product not found"})
+        }
+        res.status(200).json({message:"Product found successfully",product})
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({message:"Internal server error"})
+    }
+})
 const productRouter = router;
 
 module.exports = {productRouter}
