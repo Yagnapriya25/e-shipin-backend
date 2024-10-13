@@ -16,24 +16,59 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 // Route to create an order
+// router.post('/payment/:id/:p_id', async (req, res) => {
+//     const userId = req.params.id;
+//     const productId = req.params.p_id;
+
+//     try {
+//         const product = await Product.findById(productId);
+//         const address = await Address.findOne({user:userId});
+//         const user = await User.findById(userId);
+        
+//         if (!product) {
+//             return res.status(404).json({ error: 'Product not found' });
+//         }
+//         if (!user) {
+//             return res.status(400).json({ error: 'User not found' });
+//         }
+//         const options = {
+//             amount: product.price * 100, // Amount in paise
+//             currency: 'INR', // Required currency
+//             receipt: `receipt_order_${productId}`,
+//             payment_capture: '1',
+//             notes: {
+//                 product_details: product,
+//                 customer_name: user.username,
+//                 customer_email: user.email,
+//                 customer_address: address,
+//                 customer_mobile: user.phoneNumber,
+                
+//             },
+//         };
+
+//         const order = await razorpay.orders.create(options);
+//         return res.json(order);
+//     } catch (error) {
+//         console.error('Error creating Razorpay order:', error);
+//         return res.status(500).json({ error: 'Something went wrong' });
+//     }
+// });
+
 router.post('/payment/:id/:p_id', async (req, res) => {
     const userId = req.params.id;
     const productId = req.params.p_id;
 
     try {
         const product = await Product.findById(productId);
-        const address = await Address.findOne({user:userId});
+        const address = await Address.findOne({ user: userId });
         const user = await User.findById(userId);
         
-        if (!product) {
-            return res.status(404).json({ error: 'Product not found' });
-        }
-        if (!user) {
-            return res.status(400).json({ error: 'User not found' });
-        }
+        if (!product) return res.status(404).json({ error: 'Product not found' });
+        if (!user) return res.status(400).json({ error: 'User not found' });
+
         const options = {
-            amount: product.price * 100, // Amount in paise
-            currency: 'INR', // Required currency
+            amount: product.price * 100,
+            currency: 'INR',
             receipt: `receipt_order_${productId}`,
             payment_capture: '1',
             notes: {
@@ -42,17 +77,18 @@ router.post('/payment/:id/:p_id', async (req, res) => {
                 customer_email: user.email,
                 customer_address: address,
                 customer_mobile: user.phoneNumber,
-                
             },
         };
 
         const order = await razorpay.orders.create(options);
+        console.log('Razorpay order response:', order);
         return res.json(order);
     } catch (error) {
         console.error('Error creating Razorpay order:', error);
         return res.status(500).json({ error: 'Something went wrong' });
     }
 });
+
 
 // Route to verify payment
 router.post('/payment/verify', async (req, res) => {
