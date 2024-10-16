@@ -11,37 +11,35 @@ const { cartRouter } = require('./Router/cartRouter.js');
 const { addressRouter } = require('./Router/addressRouter.js');
 const { orderRouter } = require('./Router/OrderRouter.js');
 
-
-// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
 dotenv.config();
-
 
 const app = express();
 
-
 const PORT = process.env.PORT || 8080;
 
-app.use(express.json())
-
-app.use(cors({}));
+// Configure CORS
+const allowedOrigins = ['http://localhost:3000', 'https://your-production-url.com']; // Add your production URL here
+app.use(cors({
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,
+}));
 
 app.use(bodyParser.json());
+app.use(express.json()); // This line is already included
 
 dbConnection();
 
-app.use("/uploads",express.static(path.join(__dirname,"uploads")))
+// Serve static files
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-app.use("/api/user",userRouter);
+// Define routes
+app.use("/api/user", userRouter);
+app.use("/api/category", categoryRouter);
+app.use("/api/product", productRouter);
+app.use("/api/cart", cartRouter);
+app.use("/api/address", addressRouter);
+app.use("/api/order", orderRouter);
 
-app.use("/api/category",categoryRouter)
-
-app.use("/api/product",productRouter);
-
-app.use("/api/cart",cartRouter);
-
-app.use("/api/address",addressRouter)
-
-app.use("/api/order",orderRouter);
-
-app.listen(PORT,()=>console.log(`localhost running under:${PORT}`))
+// Start the server
+app.listen(PORT, () => console.log(`Server running on port: ${PORT}`));
