@@ -20,7 +20,7 @@ const PORT = process.env.PORT || 8080;
 // Configure CORS
 const allowedOrigins = ['http://localhost:3000', 'https://your-production-url.com']; // Add your production URL here
 app.use(cors({
-    origin: allowedOrigins,
+    origin: 'http://localhost:3000',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
 }));
