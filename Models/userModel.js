@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 const generateToken = (id)=>{
-    return jwt.sign({id},process.env.secret_key)
+    return jwt.sign({id},process.env.JWT_SECRET)
 }
 
 const User = mongoose.model('User', userSchema)
