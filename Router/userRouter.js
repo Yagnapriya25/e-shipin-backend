@@ -127,28 +127,7 @@ router.post('/verify-otp', async (req, res) => {
 });
 
 
-// router.post("/login",async(req,res)=>{
-//     try {
-//         const user = await User.findOne({email:req.body.email});
-//         if(!req.body.email || !req.body.password){
-//             res.status(400).json({message:"All credentials are required"})
-//         }
-//         if(!user){
-//             res.status(400).json({message:"User not Exist"})
-//         }
-        
-//         const comparePassword = await bcrypt.compare(req.body.password,user.password);
-//         if(!comparePassword){
-//             res.status(400).json({message:"Password Incorrect"})
-//         }
-//         const token = generateToken(user._id);
-//         res.status(200).json({message:"Login successfully",token,user})
-//         console.log(process.env.JWT_SECRET);
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).send('Internal Server Error',error);
-//     }
-// })
+
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
