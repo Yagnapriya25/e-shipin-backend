@@ -114,7 +114,7 @@ router.post('/verify-otp', async (req, res) => {
         await user.save();
 
         // Generate token
-        const token = jwt.sign({ id: user._id }, process.env.Secret_key, { expiresIn: '1h' });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // Clear OTP from temporary store
         delete tempOtpStore[email];
@@ -143,7 +143,7 @@ router.post("/login",async(req,res)=>{
         }
         const token = generateToken(user._id);
         res.status(200).json({message:"Login successfully",token,user})
-        console.log(process.env.Secret_key);
+        console.log(process.env.JWT_SECRET);
     } catch (error) {
         console.error(error);
         res.status(500).send('Internal Server Error');
@@ -159,7 +159,7 @@ router.post("/forget",async(req,res)=>{
         if(!req.body.email){
             res.status(400).json({message:"All credentials are Required"})
         }
-        const secret = user.password + process.env.Secret_key;
+        const secret = user.password + process.env.JWT_SECRET;
         const token = jwt.sign(
             {_id:user._id,email:user.email},
             secret,
@@ -198,7 +198,7 @@ router.put("/reset-password/:id/:token",async(req,res)=>{
         if(!password){
             res.status(400).json({message:"All credentials are required"})
         }
-        const secret = userData.password + process.env.Secret_key;
+        const secret = userData.password + process.env.JWT_SECRET;
         const verify = jwt.verify(token,secret);
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password,salt);
