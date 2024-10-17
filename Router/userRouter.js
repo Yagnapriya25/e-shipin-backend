@@ -127,28 +127,59 @@ router.post('/verify-otp', async (req, res) => {
 });
 
 
-router.post("/login",async(req,res)=>{
-    try {
-        const user = await User.findOne({email:req.body.email});
-        if(!req.body.email || !req.body.password){
-            res.status(400).json({message:"All credentials are required"})
-        }
-        if(!user){
-            res.status(400).json({message:"User not Exist"})
-        }
+// router.post("/login",async(req,res)=>{
+//     try {
+//         const user = await User.findOne({email:req.body.email});
+//         if(!req.body.email || !req.body.password){
+//             res.status(400).json({message:"All credentials are required"})
+//         }
+//         if(!user){
+//             res.status(400).json({message:"User not Exist"})
+//         }
         
-        const comparePassword = await bcrypt.compare(req.body.password,user.password);
-        if(!comparePassword){
-            res.status(400).json({message:"Password Incorrect"})
+//         const comparePassword = await bcrypt.compare(req.body.password,user.password);
+//         if(!comparePassword){
+//             res.status(400).json({message:"Password Incorrect"})
+//         }
+//         const token = generateToken(user._id);
+//         res.status(200).json({message:"Login successfully",token,user})
+//         console.log(process.env.JWT_SECRET);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).send('Internal Server Error',error);
+//     }
+// })
+router.post("/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Check if email and password are provided
+        if (!email || !password) {
+            return res.status(400).json({ message: "All credentials are required" });
         }
+
+        // Find user by email
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(400).json({ message: "User does not exist" });
+        }
+
+        // Compare passwords
+        const comparePassword = await bcrypt.compare(password, user.password);
+        if (!comparePassword) {
+            return res.status(400).json({ message: "Password incorrect" });
+        }
+
+        // Generate token
         const token = generateToken(user._id);
-        res.status(200).json({message:"Login successfully",token,user})
-        console.log(process.env.JWT_SECRET);
+        return res.status(200).json({ message: "Login successfully", token, user });
+        
     } catch (error) {
         console.error(error);
-        res.status(500).send('Internal Server Error',error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
-})
+});
+
 
 router.post("/forget",async(req,res)=>{
     try {
