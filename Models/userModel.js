@@ -16,6 +16,6 @@ const generateToken = (id)=>{
     return jwt.sign({id},process.env.JWT_SECRET);
 }
 
-const User = mongoose.model('User', userSchema)
+const User = mongoose.model('User', userSchema);
 
 module.exports = {User,generateToken};
