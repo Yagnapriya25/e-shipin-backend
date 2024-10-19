@@ -105,12 +105,13 @@ router.put("/edit/:c_id",upload.single("photo"),async(req,res)=>{
        const category = await Category.findByIdAndUpdate(
           req.params.c_id,
           {...req.body,photo},
+          
           {new:true}
        )
-       if(!user){
+       if(!category){
           res.status(400).json({message:"Error Occured in Data Updation"})
        }
-       res.status(200).json({message:"Data Updated Successfully",user})
+       res.status(200).json({message:"Data Updated Successfully",category})
 
   } catch (error) {
       console.error(error);
