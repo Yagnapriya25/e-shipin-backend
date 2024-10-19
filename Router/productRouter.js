@@ -20,7 +20,7 @@ const uploads = multer({
 
 router.post("/create/:cat_id/:id",uploads.array("images"),async(req,res)=>{
     try {
-        let images = [];
+        let images = []
         const {name,description1,description2,description3,instock,price}=req.body;
         const Base_URL = process.env.Backend_url;
         if(process.env.NODE_ENV==='production'){
