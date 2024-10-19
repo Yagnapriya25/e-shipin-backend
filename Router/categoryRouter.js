@@ -92,7 +92,7 @@ router.get("/:cat_id", async (req, res) => {
   }
 });
 
-router.put("/edit/:c_id",uploads.single("avatar"),async(req,res)=>{
+router.put("/edit/:c_id",upload.single("avatar"),async(req,res)=>{
   try {
       let photo;
       let Base_URL = process.env.Backend_url;
