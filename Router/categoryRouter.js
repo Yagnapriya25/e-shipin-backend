@@ -92,6 +92,31 @@ router.get("/:cat_id", async (req, res) => {
   }
 });
 
+router.put("/edit/:c_id",uploads.single("avatar"),async(req,res)=>{
+  try {
+      let photo;
+      let Base_URL = process.env.Backend_url;
+      if(process.env.NODE_ENV==="production"){
+          Base_URL=`${req.protocol}://${req.get("host")}`
+      }
+       if(req.file){
+          photo = `${Base_URL}/uploads/users/${req.file.originalname}`
+       }
+       const category = await Category.findByIdAndUpdate(
+          req.params.c_id,
+          {...req.body,photo},
+          {new:true}
+       )
+       if(!user){
+          res.status(400).json({message:"Error Occured in Data Updation"})
+       }
+       res.status(200).json({message:"Data Updated Successfully",user})
+
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({message:'Internal Server Error'});
+  }
+})
 router.delete("/remove/:id",async(req,res)=>{
   try {
     const category = await Category.findOneAndDelete({_id:req.params.id})
