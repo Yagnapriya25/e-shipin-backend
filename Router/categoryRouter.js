@@ -100,7 +100,7 @@ router.put("/edit/:c_id",upload.single("photo"),async(req,res)=>{
           Base_URL=`${req.protocol}://${req.get("host")}`
       }
        if(req.file){
-          photo = `${Base_URL}/uploads/users/${req.file.originalname}`
+          photo = `${Base_URL}/uploads/category/${req.file.originalname}`
        }
        const category = await Category.findByIdAndUpdate(
           req.params.c_id,
