@@ -141,6 +141,7 @@ const dotenv = require('dotenv');
 const { Category } = require('../Models/categoryModel');
 const { Product } = require('../Models/productModel');
 const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 
 dotenv.config();
 
@@ -157,42 +158,47 @@ const upload = multer({ storage: multer.memoryStorage() }); // Store files in me
 const router = express.Router();
 
 // Create a new category
+// Create a new category
 router.post('/create', upload.single("photo"), async (req, res) => {
-    const { name } = req.body;
+  const { name } = req.body;
 
-    try {
-        // Check if category already exists
-        let category = await Category.findOne({ name });
-        if (category) {
-            return res.status(400).json({ msg: 'Category already exists' });
-        }
+  try {
+      // Check if category already exists
+      let category = await Category.findOne({ name });
+      if (category) {
+          return res.status(400).json({ msg: 'Category already exists' });
+      }
 
-        let photo;
-        if (req.file) {
-            const result = await cloudinary.uploader.upload_stream({ folder: 'categories' }, (error, result) => {
-                if (error) {
-                    return res.status(500).json({ msg: 'Error uploading to Cloudinary' });
-                }
-                photo = result.secure_url;
-            });
-            req.file.stream.pipe(result);
-        }
+      let photo;
+      if (req.file) {
+          photo = await new Promise((resolve, reject) => {
+              const stream = cloudinary.uploader.upload_stream({ folder: 'categories' }, (error, result) => {
+                  if (error) {
+                      return reject(error);
+                  }
+                  resolve(result.secure_url);
+              });
+              // Pipe the file stream to Cloudinary
+              streamifier.createReadStream(req.file.buffer).pipe(stream);
+          });
+      }
 
-        // Create new category
-        category = new Category({
-            name,
-            photo
-        });
+      // Create new category
+      category = new Category({
+          name,
+          photo
+      });
 
-        await category.save();
-
-        res.status(201).json({ msg: 'Category created successfully', category });
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Internal Server Error');
-    }
+      await category.save();
+      res.status(201).json({ msg: 'Category created successfully', category });
+  } catch (err) {
+      console.error(err);
+      res.status(500).send('Internal Server Error');
+  }
 });
 
+
+// Get all categories
 router.get('/getall', async (req, res) => {
     try {
         const categories = await Category.find({});
@@ -206,6 +212,7 @@ router.get('/getall', async (req, res) => {
     }
 });
 
+// Get a single category
 router.get("/getsingle/:id", async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);
@@ -219,14 +226,13 @@ router.get("/getsingle/:id", async (req, res) => {
     }
 });
 
+// Get products by category ID
 router.get("/:cat_id", async (req, res) => {
     try {
         const products = await Product.find({ category: req.params.cat_id }).populate("user", "-password");
-
         if (!products || products.length === 0) {
             return res.status(404).json({ message: "No products found for this category" });
         }
-
         res.status(200).json({ message: "Products found successfully", products });
     } catch (error) {
         console.log(error);
@@ -234,36 +240,50 @@ router.get("/:cat_id", async (req, res) => {
     }
 });
 
+// Edit a category
 router.put("/edit/:c_id", upload.single("photo"), async (req, res) => {
-    try {
-        let photo;
-        if (req.file) {
-            const result = await cloudinary.uploader.upload_stream({ folder: 'categories' }, (error, result) => {
-                if (error) {
-                    return res.status(500).json({ msg: 'Error uploading to Cloudinary' });
-                }
-                photo = result.secure_url;
-            });
-            req.file.stream.pipe(result);
-        }
+  try {
+      const category = await Category.findById(req.params.c_id);
+      if (!category) {
+          return res.status(400).json({ message: "Category not found" });
+      }
 
-        const category = await Category.findByIdAndUpdate(
-            req.params.c_id,
-            { ...req.body, photo },
-            { new: true }
-        );
+      let photo = category.photo; // Preserve existing photo if not updated
 
-        if (!category) {
-            return res.status(400).json({ message: "Error occurred in data updation" });
-        }
-        res.status(200).json({ message: "Data Updated Successfully", category });
+      if (req.file) {
+          // Use a Promise to handle the asynchronous upload
+          photo = await new Promise((resolve, reject) => {
+              const stream = cloudinary.uploader.upload_stream({ folder: 'categories' }, (error, result) => {
+                  if (error) {
+                      return reject(error);
+                  }
+                  resolve(result.secure_url); // Resolve with the secure URL
+              });
+              // Create a readable stream from the buffer and pipe it to Cloudinary
+              streamifier.createReadStream(req.file.buffer).pipe(stream);
+          });
+      }
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
-    }
+      // Update category
+      const updatedCategory = await Category.findByIdAndUpdate(
+          req.params.c_id,
+          { ...req.body, photo },
+          { new: true }
+      );
+
+      if (!updatedCategory) {
+          return res.status(400).json({ message: "Error occurred in data updation" });
+      }
+
+      res.status(200).json({ message: "Data Updated Successfully", category: updatedCategory });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
+
+// Delete a category
 router.delete("/remove/:id", async (req, res) => {
     try {
         const category = await Category.findOneAndDelete({ _id: req.params.id });

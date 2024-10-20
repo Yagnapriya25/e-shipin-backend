@@ -317,9 +317,10 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-
 const storage = multer.memoryStorage();
-const uploads = multer({ storage: storage });
+const uploads = multer({ storage });
+
+
 
 // Nodemailer configuration
 const transporter = nodemailer.createTransport({
@@ -548,30 +549,50 @@ router.delete("/remove/:id", async (req, res) => {
 // Update user avatar using Cloudinary
 router.put("/edit/:id", uploads.single("avatar"), async (req, res) => {
     try {
-        let avatar;
-        if (req.file) {
-            const result = await cloudinary.uploader.upload(req.file.buffer, {
-                folder: 'users' // Optional: specify a folder in your Cloudinary account
-            });
-            avatar = result.secure_url; // Get the secure URL from Cloudinary
-        }
+        const userId = req.params.id;
+        const user = await User.findById(userId);
 
-        const user = await User.findByIdAndUpdate(
-            req.params.id,
-            { ...req.body, avatar },
-            { new: true }
-        );
-        
         if (!user) {
-            res.status(400).json({ message: "Error occurred in data updation" });
+            return res.status(404).json({ message: "User not found." });
         }
-        res.status(200).json({ message: "Data Updated Successfully", user });
 
+        let avatarUrl;
+
+        // If a new avatar file is uploaded, upload it to Cloudinary
+        if (req.file) {
+            // Create a new Promise to handle the upload
+            avatarUrl = await new Promise((resolve, reject) => {
+                const uploadStream = cloudinary.uploader.upload_stream({
+                    resource_type: "image",
+                    folder: 'users', // Specify a folder in Cloudinary
+                }, (error, result) => {
+                    if (error) {
+                        return reject(new Error("Error uploading image to Cloudinary."));
+                    }
+                    resolve(result.secure_url); // Resolve with the secure URL
+                });
+
+                // End the stream with the buffer
+                uploadStream.end(req.file.buffer);
+            });
+        }
+
+        // Update fields
+        user.username = req.body.username || user.username; // Update username if provided
+        user.email = req.body.email || user.email; // Update email if provided
+        user.avatar = avatarUrl || user.avatar; // Update avatar if a new file is uploaded
+
+        const updatedUser = await user.save();
+
+        res.status(200).json({ message: "User updated successfully", user: updatedUser });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Internal Server Error' });
+        console.error("Error updating user:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 });
+
+
+
 
 const userRouter = router;
 
