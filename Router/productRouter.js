@@ -104,44 +104,45 @@ router.delete("/remove/:id",async(req,res)=>{
         res.status(500).json({message:"Internal server error"});
     }
 })
-router.put("/edit/:id",uploads.array("images"),async(req,res)=>{
+router.put("/edit/:id", uploads.array("images"), async (req, res) => {
     try {
-        const product = await Product.findOne({_id:req.params.id});
-        if(!product){
-            res.status(400).json({message:"Product not found"})
+        const product = await Product.findOne({ _id: req.params.id });
+        if (!product) {
+            return res.status(400).json({ message: "Product not found" });
         }
-        let images = [];
-        const Base_URL = process.env.Backend_url;
-        if(process.env.NODE_ENV==='production'){
-            Base_URL=`${req.protocol}://${req.get("host")}`
-        }
-        if(req.files){
-            req.files.forEach(file=>{
-                let url = `${Base_URL}/uploads/products/${file.originalname}`
-                images.push({image:url});
-            })
-        }
-        product.images = images || product.images;
-        product.name=req.body.name || product.name;
-        product.description1=req.body.description1 || product.description1;
-        product.description2=req.body.description2 || product.description2;
-        product.description3=req.body.description3 || product.description3;
-        product.instock = req.body.Instock || product.Instock;
-        product.price = req.body.price || product.price;
-        product.category = product.category;
-        product.user = product.user;
 
-        await product.save();
-        if(!product){
-            res.status(400).json({message:"Error occured in updation"})
+        let images = [];
+        const Base_URL = process.env.Backend_url || `${req.protocol}://${req.get("host")}`;
+        
+        if (req.files && req.files.length > 0) {
+            req.files.forEach(file => {
+                let url = `${Base_URL}/uploads/products/${file.originalname}`;
+                images.push({ image: url });
+            });
         }
-        res.status(200).json({message:"Product Updated Successfully",product})
+
+        // Update the product fields
+        product.images = images.length > 0 ? images : product.images; // Preserve existing images if no new ones are uploaded
+        product.name = req.body.name || product.name;
+        product.description1 = req.body.description1 || product.description1;
+        product.description2 = req.body.description2 || product.description2;
+        product.description3 = req.body.description3 || product.description3;
+        product.instock = req.body.instock || product.instock; // Ensure the key matches
+        product.price = req.body.price || product.price;
+        // Category and user are not modified in this update logic
+        // If you want to update them, you can add similar checks as above.
+
+        // Save the updated product
+        const updatedProduct = await product.save();
+        
+        res.status(200).json({ message: "Product Updated Successfully", product: updatedProduct });
 
     } catch (error) {
         console.log(error);
-        res.status(500).json({message:"Internal server error"}); 
+        res.status(500).json({ message: "Internal server error" });
     }
-})
+});
+
 router.get("/getproduct/:id",async(req,res)=>{
     try {
         const user = await User.findOne({_id:req.params.id});
