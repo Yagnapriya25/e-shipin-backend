@@ -321,6 +321,7 @@ router.put("/edit/:id", uploads.array("images"), async (req, res) => {
                         { resource_type: "image", public_id: filename },
                         (error, result) => {
                             if (error) {
+                                console.error("Cloudinary upload error:", error);
                                 return reject(error);
                             }
                             resolve({ image: result.secure_url });
@@ -341,6 +342,8 @@ router.put("/edit/:id", uploads.array("images"), async (req, res) => {
         product.instock = req.body.instock || product.instock;
         product.price = req.body.price || product.price;
 
+        console.log("Updated product data:", product); // Log updated product data
+
         const updatedProduct = await product.save();
         res.status(200).json({ message: "Product updated successfully", product: updatedProduct });
     } catch (error) {
@@ -348,6 +351,7 @@ router.put("/edit/:id", uploads.array("images"), async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
+
 
 // Get products by user
 router.get("/getproduct/:id", async (req, res) => {
