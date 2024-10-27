@@ -457,7 +457,7 @@ router.post("/forget", async (req, res) => {
             secret,
             { expiresIn: "5m" }
         );
-        const link = `${process.env.Backend_url}/reset/${user._id}/${token}`;
+        const link = `https://e-shipin.netlify.app/reset/${user._id}/${token}`;
         const details = {
             from: process.env.USER,
             to: req.body.email,
