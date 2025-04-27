@@ -80,6 +80,7 @@ router.put("/edit/:userId",upload.none(), async (req, res) => {
         address.state = req.body.state || address.state;
         address.country = req.body.country || address.country;
         address.pincode = req.body.pincode || address.pincode;
+        address.landmark = req.body.landmark || address.landmark;
         address.phoneNumber = req.body.phoneNumber || address.phoneNumber;
 
         // Save the updated address
