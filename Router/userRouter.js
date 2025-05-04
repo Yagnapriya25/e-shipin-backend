@@ -146,40 +146,93 @@ router.post("/login", async (req, res) => {
     }
 });
 
+// router.post("/forget", async (req, res) => {
+//     try {
+//         let user = await User.findOne({ email: req.body.email });
+//         if (!user) {
+//             res.status(400).json({ message: "User not exists" });
+//         }
+//         if (!req.body.email) {
+//             res.status(400).json({ message: "All credentials are required" });
+//         }
+//         const secret = user.password + process.env.JWT_SECRET;
+//         const token = jwt.sign(
+//             { _id: user._id, email: user.email },
+//             secret,
+//             { expiresIn: "5m" }
+//         );
+//         const link = `https://e-shipin.netlify.app/reset/${user._id}/${token}`;
+//         const details = {
+//             from: process.env.USER,
+//             to: req.body.email,
+//             subject: "Reset Password",
+//             text: link
+//         };
+//         transporter.sendMail(details, (err) => {
+//             if (err) {
+//                 console.log("Error occurred in sending Email", err);
+//             }
+//             console.log("Email sent successfully");
+//         });
+//         res.json(link);
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).send('Internal Server Error');
+//     }
+// });
+
 router.post("/forget", async (req, res) => {
     try {
+        // Check if user exists by email
         let user = await User.findOne({ email: req.body.email });
         if (!user) {
-            res.status(400).json({ message: "User not exists" });
+            return res.status(400).json({ message: "User does not exist" });
         }
+
+        // Check if email is provided
         if (!req.body.email) {
-            res.status(400).json({ message: "All credentials are required" });
+            return res.status(400).json({ message: "Email is required" });
         }
+
+        // Generate JWT token for password reset
         const secret = user.password + process.env.JWT_SECRET;
         const token = jwt.sign(
             { _id: user._id, email: user.email },
             secret,
             { expiresIn: "5m" }
         );
+
+        // Generate the reset link
         const link = `https://e-shipin.netlify.app/reset/${user._id}/${token}`;
+
+        // Set up the email details
         const details = {
             from: process.env.USER,
             to: req.body.email,
             subject: "Reset Password",
-            text: link
+            text: `Click the following link to reset your password: ${link}`,
         };
+
+        // Send the email
         transporter.sendMail(details, (err) => {
             if (err) {
                 console.log("Error occurred in sending Email", err);
+                return res.status(500).json({ message: "Error sending email, please try again later." });
             }
             console.log("Email sent successfully");
         });
-        res.json(link);
+
+        // Send success response with both the link and a user-friendly message
+        res.status(200).json({ 
+            message: "Password reset link has been sent to your email. Please check your inbox (and spam folder).",
+            link: link // Include the reset link in the response
+        });
     } catch (error) {
         console.error(error);
         res.status(500).send('Internal Server Error');
     }
 });
+
 
 router.put("/reset-password/:id/:token", async (req, res) => {
     const { token } = req.params;
